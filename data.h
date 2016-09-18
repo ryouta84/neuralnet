@@ -6,43 +6,44 @@
 #include <iostream>
 #include <stdexcept>
 /*
------g‚¢•û-----
-ƒRƒ“ƒXƒgƒ‰ƒNƒ^‚ÉŠwKƒf[ƒ^‚ª“ü‚Á‚½ƒtƒ@ƒCƒ‹‚Ì–¼‘O‚ğ“n‚·B
-getSet()‚Évector<vector>‚ğ“n‚¹‚Î‚»‚ê‚Éƒf[ƒ^‚ªŠi”[‚³‚ê‚éA
+-----ä½¿ã„æ–¹-----
+ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã«å­¦ç¿’ãƒ‡ãƒ¼ã‚¿ãŒå…¥ã£ãŸãƒ•ã‚¡ã‚¤ãƒ«ã®åå‰ã‚’æ¸¡ã™ã€‚
+getSet()ã«vector<vector>ã‚’æ¸¡ã›ã°ãã‚Œã«ãƒ‡ãƒ¼ã‚¿ãŒæ ¼ç´ã•ã‚Œã‚‹ã€‚
 */
 template <typename T> class Data
 {
 public:
-	Data(const std::string name);
-    auto& getData();
-	void getData(std::vector< std::vector<T> >& vecRef);
-	void getSet(T ary[], size_t no);
+           Data(const std::string name);
+    auto&  getData();
+    void   getData(std::vector< std::vector<T> >& vecRef);
+    void   getSet(std::vector<T>& vec, size_t no);
+    size_t endIndex();  //ä¸€ã¤ã®ãƒ‡ãƒ¼ã‚¿ã®æœ€å¾Œã®æ·»å­—ï¼ˆæ•™å¸«ãƒ‡ãƒ¼ã‚¿ã‚’æŒ‡ã™ï¼‰
 private:
-	std::vector< std::vector<T> > mData;
-	size_t setOfDataNo;                     //ƒf[ƒ^‚Ì‘g”
-	size_t dataNo;                          //ƒf[ƒ^‚Ì‘”
+    std::vector< std::vector<T> > mData;
+    size_t                        setOfDataNo;//ãƒ‡ãƒ¼ã‚¿ã®çµ„æ•°
+    size_t                        dataNo;     //ãƒ‡ãƒ¼ã‚¿ã®ç·æ•°
 };
 
 template <typename T> Data<T>::Data(const std::string name) : setOfDataNo(0), dataNo(0)
 {
-	std::ifstream dataSet(name);
-	if(!dataSet){
-		std::cout << "ƒtƒ@ƒCƒ‹‚ªŠJ‚¯‚Ü‚¹‚ñB" << std::endl;
-	}
-	
-	std::string strBuf;
-	while( std::getline(dataSet, strBuf) ){
-		std::stringstream ss;
-		ss << strBuf;
-		++setOfDataNo;
-		T data;
+    std::ifstream dataSet(name);
+    if(!dataSet){
+        std::cout << "file is not open" << std::endl;
+    }
+
+    std::string strBuf;
+    while( std::getline(dataSet, strBuf) ){
+        std::stringstream ss;
+        ss << strBuf;
+        ++setOfDataNo;
+        T data;
         std::vector<T> vecBuf;
-		while( ss >> data ){
-			vecBuf.push_back(data);
-			++dataNo;
-		}
+        while( ss >> data ){
+            vecBuf.push_back(data);
+            ++dataNo;
+        }
         mData.push_back(vecBuf);
-	}
+    }
 }
 
 template <typename T> auto& Data<T>::getData()
@@ -52,23 +53,24 @@ template <typename T> auto& Data<T>::getData()
 
 template <typename T> void Data<T>::getData(std::vector< std::vector<T> >& vecRef)
 {
-	try{
-	for(int i=0; i<setOfDataNo; ++i){
+    try{
+    for(int i=0; i<setOfDataNo; ++i){
         vecRef.push_back(mData.at(i));
-	}
-	} catch(std::out_of_range& ex) {
-		std::cerr << "out of range: " << ex.what () << std::endl;
-	}
+    }
+    } catch(std::out_of_range& ex) {
+        std::cerr << "out of range!: " << ex.what () << std::endl;
+    }
 }
-template <typename T> void Data<T>::getSet(T ary[], size_t no)
+template <typename T> void Data<T>::getSet(std::vector<T>& vec, size_t index)
 {
-	size_t pos = no * (dataNo/setOfDataNo);
-	try{
-	for(int i=0; i<dataNo/setOfDataNo; ++i){
-		ary[i] = mData.at(pos);
-		++pos;
-	}
-	} catch(std::out_of_range& ex) {
-		std::cerr << "out of range: " << ex.what () << std::endl;
-	}
+    try{
+        vec = mData.at(index);
+    } catch(std::out_of_range& ex) {
+        std::cerr << "out of range!!: " << ex.what () << std::endl;
+    }
+}
+
+template <typename T> size_t Data<T>::endIndex()
+{
+    return dataNo/setOfDataNo -1;
 }

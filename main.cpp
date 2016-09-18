@@ -6,10 +6,10 @@ using namespace std;
 
 int main()
 {
-	NeuralNet nn("data.txt");
+	NeuralNet nn("/Users/I13I085/GitHub/test/data.txt");
 	//cout << nn.start() << endl;
-    
-	string dummy;
+
+    string dummy;
 	cin >> dummy;
 	return 0;
 }

@@ -1,23 +1,21 @@
 #pragma once
 
+#include <cmath>
 #include <valarray>
 #include <iostream>
 
-class Neuron 
+class Neuron
 {
 public:
-	Neuron(size_t s); //(d‚İ‚ÌŒÂ”)
-	void update(double w[], double t);
-    void input(double input[]);
-	double calc(); //“ü—Í‚µ‚ÄŒvZ‚µo—Í‚·‚é
+                Neuron(size_t s);        //(é‡ã¿ã®å€‹æ•°)
+    void        update(double w[], double t);
+    double      output(double input[]);  //è¨ˆç®—ã—ã¦å‡ºåŠ›
 private:
-	size_t mSize;                       //d‚İ‚ÌŒÂ”
-	std::valarray<double>   mWeight;    //d‚İ
-	std::valarray<double>   mInput;     //“ü—Í’l
-	double                  mThreshold;	//è‡’l
-    
-	double f(double u);	                //“`’BŠÖ”
-    
-    void setThreshold(double t);
-	void setWeight(double ary[]);
+    size_t                  mSize;      //é‡ã¿(å…¥åŠ›)ã®å€‹æ•°
+    std::valarray<double>   mWeight;    //é‡ã¿
+    double                  mThreshold; //é–¾å€¤
+
+    double      f(double u);            //å‡ºåŠ›é–¢æ•°
+    void        setThreshold(double t);
+    void        setWeight(double ary[]);
 };

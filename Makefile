@@ -1,5 +1,5 @@
 OBJS	= main.o neuralnet.o neuron.o
-PROGRAM = main.exe
+PROGRAM = main
 
 all:			$(PROGRAM)
 

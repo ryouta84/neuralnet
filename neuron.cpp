@@ -1,31 +1,29 @@
 #include "neuron.h"
 
-Neuron::Neuron(size_t s) : mSize(s), mThreshold(0)
+Neuron::Neuron(size_t s) : mSize(s), mWeight(0), mThreshold(0)
 {
 	mWeight.resize(mSize);
-	mInput.resize(mSize);
-    std::cout << "ニューロン作成" << std::endl;
-}
-
-void Neuron::input(double input[])
-{
-	for(int i=0; i<mInput.size(); ++i){
-		mInput[i] = input[i];
-	}
+    std::cout << "Neuron!" << std::endl;
 }
 
 void Neuron::update(double w[], double t)
 {
     setWeight(w);
     setThreshold(t);
+    for(int i=0; i<mSize; ++i){
+        std::cout << w[i] << " ";
+    }
+    std::cout << t << std::endl;
 }
 
-double Neuron::calc()
+double Neuron::output(double input[])
 {
-	std::valarray<double> buf = mWeight * mInput;
+    std::valarray<double> data(input, mSize);
+	std::valarray<double> buf = mWeight * data;
 	double                u   = buf.sum();
+
 	u -= mThreshold;
-    
+
 	return f(u);
 }
 
@@ -44,11 +42,6 @@ void Neuron::setThreshold(double t)
 
 double Neuron::f(double u)
 {
-	//ステップ関数
-	if(u >= 0) return 1.0;
-	else return 0.0;
-	
-	//シグモイド関数
-	//return 1.0 / (1.0 + exp(-u));
+	//繧ｷ繧ｰ繝｢繧､繝蛾未謨ｰ
+	return 1.0 / (1.0 + exp(-u));
 }
-
