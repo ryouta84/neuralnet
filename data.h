@@ -44,6 +44,12 @@ template <typename T> Data<T>::Data(const std::string name) : setOfDataNo(0), da
         }
         mData.push_back(vecBuf);
     }
+    for(auto i : mData){
+        for(auto j : i){
+            std::cout << j << " ";
+        }
+        std::cout << std::endl;
+    }
 }
 
 template <typename T> auto& Data<T>::getData()

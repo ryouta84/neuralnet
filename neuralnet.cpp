@@ -1,7 +1,7 @@
 #include "neuralnet.h"
 
 NeuralNet::NeuralNet(const std::string fileName)
-: mData(fileName), mInputLayerSize(3), mHiddenLayerSize(3), mOutputLayerSize(1), count(0)
+: mData(fileName), mInputSize(8), mHiddenLayerSize(3), mOutputLayerSize(1), count(0)
 {
     init();
 }
@@ -10,92 +10,77 @@ NeuralNet::NeuralNet(const std::string fileName)
 void NeuralNet::start()
 {
 	limit = 0.001;
-    alpha = 10;
-    double err = 100;
+    double error = 100.0;
 
-    while(err < limit){
-        //計算
-        hiddenOutput();
-        outputLayerOutput();
-        //学習
-
+    while(error > limit){
+        error = 0.0;
+        double buf[mHiddenLayerSize];
+        for(int i=0; i<mInputSize; ++i){
+            //計算
+            for(int j=0; j<mHiddenLayerSize; ++j){
+                buf[j] = mHiddenLayer.at(j).calc( mInputLayer.at(i).data() );
+            }
+            double output = mOutputLayer.at(0).calc(buf);
+            //学習
+            mOutputLayer.at(0).outNeuLearn( err(output) );
+            int index = 0;
+            for(auto n : mHiddenLayer){
+                n.hidNeuLearn( error, mOutputLayer.at(0).getWeight(index) );
+                ++index;
+            }
+            //誤差がマイナスの値にならないように
+            error +=  err(output) * err(output);
+            count++;
+        }
+        std::cout << count << "回目の学習　誤差は" << error << std::endl;
     }
 
 }
 
-void NeuralNet::hiddenOutput()
+double NeuralNet::input(double ary[])
 {
-    for(int i=0; i<mHiddenLayerSize; ++i){
-        mHidResult.push_back( mHiddenLayer.at(i).output(mInputLayer.at(i).data()) );
+    double buf[mHiddenLayerSize];
+    int i=0;
+    for(auto n : mHiddenLayer){
+        buf[i] = n.calc(ary);
+        ++i;
     }
-}
-void NeuralNet::outputLayerOutput()
-{
-    for(int i=0; i<mOutputLayerSize; ++i){
-        mOutResult.push_back( mOutputLayer.at(i).output(&mHidResult.at(i)) );
-    }
+    return mOutputLayer.at(0).calc(buf);
 }
 
 double NeuralNet::err(double& output)
 {
-    double e = mInputLayer.at(count).at(mData.endIndex()) - output;
+    double e = mInputLayer.at(count % mInputSize).at(mData.endIndex()) - output;
     return e;
-}
-
-void backPropagation(double err)
-{
-    
-}
-
-double NeuralNet::drnd()
-{
-    std::random_device seedGen;
-    std::mt19937 engine(seedGen());
-    std::uniform_real_distribution<double> dist(-1.0, 1.0);
-
-    return dist(engine);
 }
 
 /*--------------各層の初期化---------------*/
 
 void NeuralNet::initInputLayer()
 {
-    mInputLayer.reserve(mInputLayerSize);
+    mInputLayer.reserve(mInputSize);
 
-    for(int i=0; i<mInputLayerSize; ++i){
+    for(int i=0; i<mInputSize; ++i){
         mInputLayer.push_back(std::vector<double>(0.0)); //要素をvector内に作らないと範囲外
-        mData.getSet( mInputLayer.at(i), i );
+        mData.getSet( mInputLayer.at(i), i  );
     }
 }
 
 void NeuralNet::initHiddenLayer()
 {
     mHiddenLayer.reserve(mHiddenLayerSize);
-    mHidResult.reserve(mHiddenLayerSize);
 
     for(int i=0; i<mHiddenLayerSize; ++i){
-        mHiddenLayer.push_back(Neuron(mInputLayerSize));
-        //重みと閾値の初期化
-        double ary[mInputLayerSize];
-        for(auto& i : ary){
-            i = drnd();
-        }
-        mHiddenLayer.at(i).update(ary,drnd());
+        mHiddenLayer.push_back(Neuron(mHiddenLayerSize));
     }
 }
 
 void NeuralNet::initOutputLayer()
 {
     mOutputLayer.reserve(mOutputLayerSize);
-    mOutResult.reserve(mOutputLayerSize);
+
     for(int i=0; i<mOutputLayerSize; ++i){
-        mOutputLayer.push_back(Neuron(2));
-        //重みと閾値の初期化
-        double ary[mInputLayerSize];
-        for(auto& i : ary){
-            i = drnd();
-        }
-        mOutputLayer.at(i).update(ary,drnd());
+        mOutputLayer.push_back(Neuron(mHiddenLayerSize));
     }
 }
 

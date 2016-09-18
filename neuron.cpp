@@ -1,47 +1,72 @@
 #include "neuron.h"
 
-Neuron::Neuron(size_t s) : mSize(s), mWeight(0), mThreshold(0)
+Neuron::Neuron(size_t s)
+: mSize(s), mInput(0), mWeight(0), mThreshold(0), mOutput(0), alpha(10.0)
 {
+    mInput.resize(mSize);
 	mWeight.resize(mSize);
+
+    initNeuron();
+
     std::cout << "Neuron!" << std::endl;
 }
 
-void Neuron::update(double w[], double t)
+//中間層のニューロンと結合している出力層の重みを渡す
+void Neuron::hidNeuLearn(double err, double nextWeight)
 {
-    setWeight(w);
-    setThreshold(t);
-    for(int i=0; i<mSize; ++i){
-        std::cout << w[i] << " ";
+    double d = mOutput * (1 - mOutput) * nextWeight * err * mOutput * (1 - mOutput);
+    for(int i=0; i<mWeight.size(); ++i){
+        mWeight[i] = mWeight[i] + alpha * mInput[i] * d;
     }
-    std::cout << t << std::endl;
+    mThreshold = mThreshold + alpha * (-1.0) * d;
 }
 
-double Neuron::output(double input[])
+void Neuron::outNeuLearn(double err)
 {
-    std::valarray<double> data(input, mSize);
-	std::valarray<double> buf = mWeight * data;
-	double                u   = buf.sum();
+    double d = err * mOutput * (1 - mOutput);
+    for(int i=0; i<mSize; ++i){
+        mWeight[i] = mWeight[i] + alpha * mInput[i] * d;
+    }
+    mThreshold = mThreshold + alpha * (-1.0) * d;
+}
 
+double Neuron::calc(double input[])
+{
+    std::valarray<double> buf(input, mSize);
+    mInput = buf;
+	buf = mWeight * mInput;
+	double u = buf.sum();
 	u -= mThreshold;
+    mOutput = f(u);
 
-	return f(u);
+	return mOutput;
 }
 
-/*********************private********************************/
-void Neuron::setWeight(double ary[])
+double Neuron::drnd()
 {
-	for(int i=0; i<mWeight.size(); ++i){
-		mWeight[i] = ary[i];
-	}
+    std::random_device seedGen;
+    std::mt19937 engine(seedGen());
+    std::uniform_real_distribution<double> dist(-1.0, 1.0);
+
+    return dist(engine);
 }
 
-void Neuron::setThreshold(double t)
+double Neuron::getWeight(size_t i)
 {
-	mThreshold = t;
+    return mWeight[i];
 }
 
 double Neuron::f(double u)
 {
 	//シグモイド関数
 	return 1.0 / (1.0 + exp(-u));
+}
+
+void Neuron::initNeuron()
+{
+    for(auto& w : mWeight){
+        w = drnd();
+        std::cout << w << std::endl;
+    }
+    mThreshold = drnd();
 }
