@@ -12,6 +12,7 @@ int main()
 	NeuralNet nn(name);
 	nn.start();
 
+    cout << fixed;
     cin.ignore();
     string dummy;
     while(true){
