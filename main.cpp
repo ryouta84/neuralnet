@@ -6,9 +6,13 @@ using namespace std;
 
 int main()
 {
-	NeuralNet nn("/Users/I13I085/GitHub/neuralnet/data.txt");
+    string name;
+    cout << "ファイルパスを入力：";
+    cin >> name;
+	NeuralNet nn(name);
 	nn.start();
 
+    cin.ignore();
     string dummy;
     while(true){
         getline(cin, dummy);
@@ -21,7 +25,7 @@ int main()
             buf[i] = d;
             ++i;
         }
-        cout << "output " << nn.input(buf) << endl;
+        cout << "result " << nn.input(buf) << endl;
     }
 	return 0;
 }
