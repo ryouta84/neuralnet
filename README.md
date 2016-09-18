@@ -1,1 +1,2 @@
 # neuralnet
+back propagation
