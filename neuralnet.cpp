@@ -1,92 +1,128 @@
 #include "neuralnet.h"
 
 NeuralNet::NeuralNet(const std::string fileName)
-: mData(fileName), mInputSize(8), mHiddenLayerSize(3), mOutputLayerSize(1), count(0)
+: mInputLayerSize(3), mHiddenLayerSize(3), mOutputLayerSize(1),
+  mInputLayer(0), mHiddenLayer(mHiddenLayerSize), mOutputLayer(mOutputLayerSize),
+  mCount(0), mData(fileName), mLayerNum(3), mAlpha(10)
 {
-    init();
+    mInputLayer.init(mInputLayerSize, 0); //入力層は引数が二つ必要なので関数で初期化
+    mOutput.reserve(mInputLayerSize);
+    mWeight.reserve(mHiddenLayerSize + mOutputLayerSize);
+    mBuf.reserve(mInputLayerSize);
+    try{
+        //mOutput,mWeightを初期化
+        //mOutputは各層に一つ必要
+        std::valarray<double> tmp(0.0, mInputLayerSize);
+        for(int i=0; i<mLayerNum; ++i){
+            mOutput.push_back(tmp);
+            mBuf.push_back(tmp);
+        }
+        for(int i=0; i<mHiddenLayerSize+mOutputLayerSize; ++i){
+            mWeight.push_back(tmp);
+        }
+        initWeight();
+    }catch(std::out_of_range& ex) {
+        std::cerr << "out of range : construct : " << ex.what () << std::endl;
+    }
+    //各層の状態の表示
+    mInputLayer.status();
+    mHiddenLayer.status();
+    mOutputLayer.status();
 }
-
 
 void NeuralNet::start()
 {
-	limit = 0.001;
-    double error = 100.0;
+    try{
+        mLimit = 0.001;
+        double totalErr = 100;
 
-    while(error > limit){
-        error = 0.0;
-        double buf[mHiddenLayerSize];
-        for(int i=0; i<mInputSize; ++i){
-            //計算
-            for(int j=0; j<mHiddenLayerSize; ++j){
-                buf[j] = mHiddenLayer.at(j).calc( mInputLayer.at(i).data() );
+        while(totalErr > mLimit){
+            totalErr = 0.0;
+            //教師データ全てを学習
+            for(int i=0; i<mData.getSetsNo(); ++i){
+                std::valarray<double> input( mData.getData().at(i).data(), mInputLayerSize );
+                forward(input);
+                //std::cout << i+1 << " output " << mOutput.at(2)[0] << std::endl;
+                double err = error(mData.getData().at(i)[3], mOutput.at(2)[0]);
+                backPropagation(err);
+                totalErr += err * err;
             }
-            double output = mOutputLayer.at(0).calc(buf);
-            //学習
-            mOutputLayer.at(0).outNeuLearn( err(output) );
-            int index = 0;
-            for(auto n : mHiddenLayer){
-                n.hidNeuLearn( error, mOutputLayer.at(0).getWeight(index) );
-                ++index;
-            }
-            //誤差がマイナスの値にならないように
-            error +=  err(output) * err(output);
-            count++;
+            ++mCount;
+            std::cout << std::fixed;
+            std::cout << mCount << "times" << std::endl;
+            std::cout << "total error " << totalErr << std::endl;
         }
-        std::cout << count << "回目の学習　誤差は" << error << std::endl;
-    }
-
-}
-
-double NeuralNet::input(double ary[])
-{
-    double buf[mHiddenLayerSize];
-    int i=0;
-    for(auto n : mHiddenLayer){
-        buf[i] = n.calc(ary);
-        ++i;
-    }
-    return mOutputLayer.at(0).calc(buf);
-}
-
-double NeuralNet::err(double& output)
-{
-    double e = mInputLayer.at(count % mInputSize).at(mData.endIndex()) - output;
-    return e;
-}
-
-/*--------------各層の初期化---------------*/
-
-void NeuralNet::initInputLayer()
-{
-    mInputLayer.reserve(mInputSize);
-
-    for(int i=0; i<mInputSize; ++i){
-        mInputLayer.push_back(std::vector<double>(0.0)); //要素をvector内に作らないと範囲外
-        mData.getSet( mInputLayer.at(i), i  );
+        std::cout << "学習終了" << std::endl;
+    }catch(std::out_of_range& ex) {
+        std::cerr << "out of range : start : " << ex.what() << std::endl;
     }
 }
 
-void NeuralNet::initHiddenLayer()
+std::valarray<double>& NeuralNet::forward(std::valarray<double>& output)
 {
-    mHiddenLayer.reserve(mHiddenLayerSize);
-
+    //入力層の計算
+    mOutput.at(0)  = output; //入力層からの出力は３個
+    //中間層の計算
     for(int i=0; i<mHiddenLayerSize; ++i){
-        mHiddenLayer.push_back(Neuron(mHiddenLayerSize));
+        mBuf.at(i) = output * mWeight.at(i);
+    }
+    mOutput.at(1)  = mHiddenLayer.calc(mBuf);
+    //出力層の計算
+    mBuf.at(0) = mOutput.at(1) * mWeight.at(3);
+    mOutput.at(2)  = mOutputLayer.calc(mBuf);
+
+    return mOutput.at(2);
+}
+
+void NeuralNet::backPropagation(double err)
+{
+    //出力層の学習
+    outputLayerLearn(err);
+    //中間層の学習
+    hiddenLayerLearn(err);
+}
+
+void NeuralNet::outputLayerLearn(double e)
+{
+    double o = mOutput.back()[0]; //ニューラルネットの最終出力
+    double d = e * o * (1 - o);
+    for( int i=0; i<mHiddenLayerSize; ++i ){
+        mWeight.at(3)[i] = mWeight.at(3)[i] + mAlpha * mOutput.at(1)[i] * d;
+    }
+    double threshold = mAlpha * (-1.0) * d;
+    mOutputLayer.updataNeuron(0, threshold);
+}
+
+void NeuralNet::hiddenLayerLearn(double e)
+{
+    double o = mOutput.back()[0];
+    for(int i=0; i<mHiddenLayerSize; ++i){
+        double hi = mOutput.at(1)[i]; //中間層のi番目のニューロンの出力
+        double d = hi * (1 - hi) * mWeight.at(3)[i] * e * o * (1 - o);
+        for(int j=0; j<mInputLayerSize; ++j){
+            mWeight.at(i)[j] = mWeight.at(i)[j] + mAlpha * mOutput.at(0)[j] * d;
+        }
+        double threshold = mAlpha * (-1.0) * d;
+        mHiddenLayer.updataNeuron(i, threshold);
     }
 }
 
-void NeuralNet::initOutputLayer()
+double NeuralNet::error(double teacher, double output)
 {
-    mOutputLayer.reserve(mOutputLayerSize);
-
-    for(int i=0; i<mOutputLayerSize; ++i){
-        mOutputLayer.push_back(Neuron(mHiddenLayerSize));
-    }
+    return teacher - output;
 }
 
-void NeuralNet::init()
+void NeuralNet::initWeight()
 {
-    initInputLayer();
-    initHiddenLayer();
-    initOutputLayer();
+    std::random_device seedGen;
+    std::mt19937 engine(seedGen());
+    std::uniform_real_distribution<double> dist(-1.0, 1.0);
+
+    for(auto& valary : mWeight){
+        for(auto& w : valary){
+            w = dist(engine);
+            std::cout << w << " ";
+        }
+        std::cout << std::endl;
+    }
 }

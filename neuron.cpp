@@ -1,45 +1,17 @@
 #include "neuron.h"
 
 Neuron::Neuron(size_t s)
-: mSize(s), mInput(0), mWeight(0), mThreshold(0), mOutput(0), alpha(10.0)
+: mSize(s), mThreshold(0)
 {
-    mInput.resize(mSize);
-	mWeight.resize(mSize);
-
     initNeuron();
-
-    std::cout << "Neuron!" << std::endl;
 }
 
-//中間層のニューロンと結合している出力層の重みを渡す
-void Neuron::hidNeuLearn(double err, double nextWeight)
+double Neuron::calc(const std::valarray<double>& input)
 {
-    double d = mOutput * (1 - mOutput) * nextWeight * err * mOutput * (1 - mOutput);
-    for(int i=0; i<mWeight.size(); ++i){
-        mWeight[i] = mWeight[i] + alpha * mInput[i] * d;
-    }
-    mThreshold = mThreshold + alpha * (-1.0) * d;
-}
+    double u = input.sum();
+    u -= mThreshold;
 
-void Neuron::outNeuLearn(double err)
-{
-    double d = err * mOutput * (1 - mOutput);
-    for(int i=0; i<mSize; ++i){
-        mWeight[i] = mWeight[i] + alpha * mInput[i] * d;
-    }
-    mThreshold = mThreshold + alpha * (-1.0) * d;
-}
-
-double Neuron::calc(double input[])
-{
-    std::valarray<double> buf(input, mSize);
-    mInput = buf;
-	buf = mWeight * mInput;
-	double u = buf.sum();
-	u -= mThreshold;
-    mOutput = f(u);
-
-	return mOutput;
+    return f(u);
 }
 
 double Neuron::drnd()
@@ -51,22 +23,19 @@ double Neuron::drnd()
     return dist(engine);
 }
 
-double Neuron::getWeight(size_t i)
-{
-    return mWeight[i];
-}
-
 double Neuron::f(double u)
 {
-	//シグモイド関数
-	return 1.0 / (1.0 + exp(-u));
+    //シグモイド関数
+    return 1.0 / (1.0 + exp(-u));
+}
+
+void Neuron::updateThreshold(double thr)
+{
+    mThreshold += thr;
 }
 
 void Neuron::initNeuron()
 {
-    for(auto& w : mWeight){
-        w = drnd();
-        std::cout << w << std::endl;
-    }
     mThreshold = drnd();
+    std::cout << "Neuron!" << std::endl;
 }

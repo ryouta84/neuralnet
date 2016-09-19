@@ -1,7 +1,8 @@
 #pragma once
 
-#include "neuron.h"
+#include "layer.h"
 #include "data.h"
+#include <random>
 #include <vector>
 
 class NeuralNet
@@ -9,25 +10,32 @@ class NeuralNet
 public:
             NeuralNet(const std::string filename);
     void    start();
-    double  input(double ary[]);
+    std::valarray<double>& forward(std::valarray<double>& input);   //入力層から出力層方向に計算
 private:
-    double  err(double& output);            //教師データと出力から誤差を求める
-    void    init();                         //ニューラルネットの初期化
+    void    backPropagation(double err);          //学習
+    void    outputLayerLearn(double e);
+    void    hiddenLayerLearn(double e);
+    double  error(double teacher, double output);
+    void    initWeight();               //重みをランダムに初期化
 
-    std::vector< std::vector<double> > mInputLayer;//入力層
-    size_t                        mInputSize;      //教師データの個数
-    void initInputLayer();                            //入力層の初期化
+    size_t          mInputLayerSize;    //入力層のニューロンの個数
+    size_t          mHiddenLayerSize;   //中間層のニューロンの個数
+    size_t          mOutputLayerSize;   //出力層ニューロンの個数
 
-    std::vector< Neuron >         mHiddenLayer;       //中間層
-    size_t                        mHiddenLayerSize;   //中間層のニューロンの個数
-    void initHiddenLayer();                           //中間層の初期化
+    layer           mInputLayer;        //入力層
 
-    std::vector< Neuron >         mOutputLayer;       //出力層
-    size_t                        mOutputLayerSize;   //出力層の個数
-    void initOutputLayer();                           //出力層の初期化
+    layer           mHiddenLayer;       //中間層
 
-    Data<double>                  mData;              //学習データセット
-    double                        limit;              //誤差の上限
-    size_t                        count;              //学習回数
+    layer           mOutputLayer;       //出力層
+
+    std::vector< std::valarray<double> > mOutput;
+    std::vector< std::valarray<double> > mWeight; //中間層以降の重みを保存する
+    std::vector< std::valarray<double> > mBuf;
+
+    Data<double>    mData;              //学習データセット
+    double          mLimit;              //誤差の上限
+    double          mAlpha;
+    size_t          mLayerNum;
+    uint64_t        mCount;              //学習回数
 
 };

@@ -1,6 +1,7 @@
 #include "neuralnet.h"
 
 #include <iostream>
+#include <valarray>
 
 using namespace std;
 
@@ -13,8 +14,8 @@ int main()
 	nn.start();
 
     cout << fixed;
-    cin.ignore();
     string dummy;
+    cin.ignore();
     while(true){
         getline(cin, dummy);
         stringstream ss;
@@ -26,7 +27,8 @@ int main()
             buf[i] = d;
             ++i;
         }
-        cout << "result " << nn.input(buf) << endl;
+        valarray<double> ary(buf, 3);
+        cout << "result " << nn.forward(ary)[0] << endl;
     }
 	return 0;
 }
